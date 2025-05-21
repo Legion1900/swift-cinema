@@ -3,7 +3,7 @@
 
 import PackageDescription
 
-let packageName = "SwiftCore"
+let packageName = "CinemaCore"
 let generatedName = "Generated"
 let generatedPath = ".build/\(generatedName.lowercased())"
 

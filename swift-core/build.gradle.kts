@@ -1,4 +1,3 @@
-import com.readdle.android.swift.gradle.SwiftAndroidPluginExtension
 import com.readdle.android.swift.gradle.SwiftAndroidPluginExtension.SwiftFlags
 
 plugins {
@@ -9,7 +8,7 @@ plugins {
 }
 
 android {
-    namespace = "com.legion1900.swift_core"
+    namespace = "com.legion1900.swiftcore"
     compileSdk = 35
     ndkVersion = "25.2.9519653"
 
@@ -18,7 +17,7 @@ android {
             annotationProcessorOptions {
                 arguments["com.readdle.codegen.package"] = """{
                    "moduleName": "SwiftCoreGenerated",
-                   "importPackages": ["JavaCoder", "SwiftCore"]
+                   "importPackages": ["JavaCoder", "CinemaCore"]
                }
                """
             }
@@ -30,10 +29,6 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
-
-        ndk {
-            abiFilters += "arm64-v8a"
-        }
     }
 
     buildTypes {
@@ -43,10 +38,18 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+
+            ndk {
+                abiFilters += "arm64-v8a"
+            }
         }
 
         debug {
             isJniDebuggable = true
+
+            ndk {
+                abiFilters += "arm64-v8a"
+            }
         }
     }
     compileOptions {

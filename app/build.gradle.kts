@@ -42,6 +42,7 @@ android {
 dependencies {
 
     implementation(project(":swift-core"))
+    implementation(libs.swift.codegen.annotations)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

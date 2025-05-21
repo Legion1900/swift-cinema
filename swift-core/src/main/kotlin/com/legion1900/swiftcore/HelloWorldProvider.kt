@@ -1,4 +1,4 @@
-package com.legion1900.swift_core
+package com.legion1900.swiftcore
 
 import com.readdle.codegen.anotation.SwiftReference
 import java.lang.annotation.Native
