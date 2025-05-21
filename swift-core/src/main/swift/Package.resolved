@@ -1,0 +1,51 @@
+{
+  "originHash" : "a153835ed8e29393404d98c9aee6da20ac4b78b31f4e6228903446111b42b14d",
+  "pins" : [
+    {
+      "identity" : "java_swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/readdle/java_swift.git",
+      "state" : {
+        "revision" : "8c6910dbc94657e5dfb2bc9d1d4d862ffd809d83",
+        "version" : "2.2.3"
+      }
+    },
+    {
+      "identity" : "swift-android-ndk",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/readdle/swift-android-ndk.git",
+      "state" : {
+        "revision" : "0fbe0b28344b75079ff5d811551727bdd4ab8ec0",
+        "version" : "1.1.4"
+      }
+    },
+    {
+      "identity" : "swift-anycodable",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/readdle/swift-anycodable.git",
+      "state" : {
+        "revision" : "9163d43ad317d938629592bbae798a95a3a0a4cf",
+        "version" : "1.0.3"
+      }
+    },
+    {
+      "identity" : "swift-java",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/readdle/swift-java.git",
+      "state" : {
+        "revision" : "e9449162891ce8e9687e9ff87d44c0752556df49",
+        "version" : "0.3.0"
+      }
+    },
+    {
+      "identity" : "swift-java-coder",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/readdle/swift-java-coder.git",
+      "state" : {
+        "revision" : "d46cfd9f0efb61e45b08a01160a9e4aa35ae4817",
+        "version" : "1.1.2"
+      }
+    }
+  ],
+  "version" : 3
+}
