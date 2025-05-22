@@ -99,6 +99,8 @@ dependencies {
     kapt(libs.swift.codegen)
     implementation(libs.swift.codegen.annotations)
 
+    implementation(libs.bundles.koin)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
