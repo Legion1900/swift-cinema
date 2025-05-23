@@ -11,23 +11,24 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import com.legion1900.swiftcore.HelloWorldProvider
 import com.legion1900.swiftcinema.ui.theme.SwiftCinemaTheme
-import com.readdle.codegen.anotation.JavaSwift
+import com.legion1900.swiftcore.network.NetworkClient
+import org.koin.android.ext.android.get
 
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val helloWorldProvider = HelloWorldProvider.init()
+        val networkClient = get<NetworkClient>()
+        networkClient.testRequest()
 
         enableEdgeToEdge()
         setContent {
             SwiftCinemaTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     Greeting(
-                        name = helloWorldProvider.helloWorld(),
+                        name = "Android",
                         modifier = Modifier.padding(innerPadding)
                     )
                 }

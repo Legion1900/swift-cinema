@@ -1,4 +1,7 @@
+import com.android.build.gradle.internal.cxx.configure.gradleLocalProperties
 import com.readdle.android.swift.gradle.SwiftAndroidPluginExtension.SwiftFlags
+import org.jetbrains.kotlin.konan.properties.propertyString
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.library)
@@ -7,7 +10,16 @@ plugins {
     alias(libs.plugins.kotlin.kapt)
 }
 
+val localProps by lazy {
+    val file = project.file("local.properties")
+    Properties().apply {
+        this.load(file.inputStream())
+    }
+}
+
 android {
+    buildFeatures.buildConfig = true
+
     namespace = "com.legion1900.swiftcore"
     compileSdk = 35
     ndkVersion = "25.2.9519653"
@@ -32,24 +44,25 @@ android {
     }
 
     buildTypes {
+
+        configureEach {
+            ndk {
+                abiFilters += "arm64-v8a"
+            }
+
+            buildConfigField(type = "String", name = "API_KEY", value = "${localProps.propertyString("apiKey")}")
+        }
+
         release {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-
-            ndk {
-                abiFilters += "arm64-v8a"
-            }
         }
 
         debug {
             isJniDebuggable = true
-
-            ndk {
-                abiFilters += "arm64-v8a"
-            }
         }
     }
     compileOptions {
