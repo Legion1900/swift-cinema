@@ -66,7 +66,13 @@ public class NetworkClient {
             return
         }
         // Explicitly use Empty for the response type when you don't expect a specific response
-        execute(request: request, responseType: Empty.self)
+        execute(request: request, responseType: DiscoverMoviesResponse.self) { response, error in
+            if let error = error {
+                self.logError(error, extraMessage: "testRequest failed")
+            } else if let response = response {
+                self.logMessage("Test request succeeded with response: \(response)")
+            }
+        }
     }
 
     // Helper method to make it easier to call execute with a specific response type
@@ -102,7 +108,7 @@ public class NetworkClient {
         return request
     }
 
-    private func execute<Response: Decodable>(
+    private func execute<Response: Codable>(
         request: URLRequest, _ completion: ((Response?, RequestError?) -> Void)? = nil
     ) {
         logMessage(
@@ -155,7 +161,7 @@ public class NetworkClient {
         return nil
     }
 
-    private func parseResponse<Response: Decodable>(_ data: Data?, responseType: Response.Type)
+    private func parseResponse<Response: Codable>(_ data: Data?, responseType: Response.Type)
         -> Result<Response, RequestError>
     {
         do {
@@ -179,7 +185,9 @@ public class NetworkClient {
         logger?.log(message, withTag: NetworkClient.TAG)
     }
 
-    private func logError(_ error: RequestError) {
-        logMessage(String(describing: error))
+    private func logError(_ error: RequestError, extraMessage: String? = nil) {
+        let errDescription = String(describing: error)
+        let message = extraMessage.map { "\($0): \(errDescription)" } ?? errDescription
+        logMessage(message)
     }
 }
