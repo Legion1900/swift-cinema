@@ -18,12 +18,15 @@ public enum HttpMethod: String {
 }
 
 /// Simple empty type for API calls that don't return a response body
-public struct Empty: Codable {}
+public struct Empty: Codable {
+
+    static let noType: Empty? = nil
+}
 
 public enum RequestError: Error {
     case invalidUrl
     case requestFailed(code: Int, message: String)
-    case responseParsingFailed(reason: String)
+    case serializationFailed(reason: String)
     case unknownError(reason: String)
 }
 
@@ -60,37 +63,60 @@ public class NetworkClient {
         self.baseUrl = baseUrl
     }
 
-    public func testRequest() {
-        guard let request = getRequest(fromEndpoint: "/3/discover/movie", method: .GET) else {
-            logMessage("Failed to create request")
-            return
-        }
-        // Explicitly use Empty for the response type when you don't expect a specific response
-        execute(request: request, responseType: DiscoverMoviesResponse.self) { response, error in
-            if let error = error {
-                self.logError(error, extraMessage: "testRequest failed")
-            } else if let response = response {
-                self.logMessage("Test request succeeded with response: \(response)")
+    public func execute<Response: Codable>(
+        endpoint: String, method: HttpMethod = .GET,
+        completion: ((Response?, RequestError?) -> Void)? = nil
+    ) {
+        execute(endpoint: endpoint, method: method, body: Empty.noType, completion: completion)
+    }
+
+    public func execute<Body: Codable, Response: Codable>(
+        endpoint: String, method: HttpMethod = .GET, body: Body? = nil,
+        completion: ((Response?, RequestError?) -> Void)? = nil
+    ) {
+        let result = serializeBody(body)
+            .flatMap { body in
+                getRequest(fromEndpoint: endpoint, method: .GET)
             }
+
+        switch result {
+        case .success(let request):
+            execute(request, responseType: Response.self, completion: completion)
+        case .failure(let error):
+            logError(error, extraMessage: "Failed to create request for endpoint \(endpoint)")
+            completion?(nil, error)
+        }
+    }
+
+    private func serializeBody<Body: Codable>(_ body: Body?) -> Result<Data?, RequestError> {
+
+        guard let body = body else {
+            return .success(nil)
+        }
+
+        do {
+            let body = try encoder.encode(body)
+            return .success(body)
+        } catch {
+            return .failure(.serializationFailed(reason: String(describing: error)))
         }
     }
 
     // Helper method to make it easier to call execute with a specific response type
     private func execute<Response: Codable>(
-        request: URLRequest, responseType: Response.Type,
+        _ request: URLRequest, responseType: Response.Type,
         completion: ((Response?, RequestError?) -> Void)? = nil
     ) {
         execute(request: request, completion)
     }
 
     private func getRequest(fromEndpoint endpoint: String, method: HttpMethod, body: Data? = nil)
-        -> URLRequest?
+        -> Result<URLRequest, RequestError>
     {
         guard let url = URL(string: "\(baseUrl)\(endpoint)") else {
-            logMessage("Invalid URL")
-            return nil
+            return .failure(.invalidUrl)
         }
-        return getRequest(url: url, method: method, body: body)
+        return .success(getRequest(url: url, method: method, body: body))
     }
 
     private func getRequest(url: URL, method: HttpMethod, body: Data? = nil) -> URLRequest {
@@ -177,7 +203,7 @@ public class NetworkClient {
 
             let reason =
                 "Failed to parse response: \(error.localizedDescription). Data: \(String(describing: data)), \(plaintextDataContent)"
-            return .failure(.responseParsingFailed(reason: reason))
+            return .failure(.serializationFailed(reason: reason))
         }
     }
 

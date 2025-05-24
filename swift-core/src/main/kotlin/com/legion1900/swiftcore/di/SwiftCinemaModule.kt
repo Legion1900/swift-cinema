@@ -1,6 +1,8 @@
 package com.legion1900.swiftcore.di
 
+import com.legion1900.swiftcore.MovieProvider
 import com.legion1900.swiftcore.network.AndroidApiKeyProvider
+import com.legion1900.swiftcore.network.TMDBMovieService
 import com.legion1900.swiftcore.network.NetworkClient
 import com.legion1900.swiftcore.utils.AndroidLogger
 import org.koin.dsl.module
@@ -17,4 +19,7 @@ val swiftCinemaModule = module {
             setLogger(get())
         }
     }
+
+    factory { TMDBMovieService.init(get()) }
+    single { MovieProvider.init(get()) }
 }

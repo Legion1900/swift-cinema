@@ -1,7 +1,6 @@
 package com.legion1900.swiftcore.network
 
 import com.legion1900.swiftcore.utils.AndroidLogger
-import com.readdle.codegen.anotation.SwiftFunc
 import com.readdle.codegen.anotation.SwiftReference
 import com.readdle.codegen.anotation.SwiftSetter
 
@@ -14,9 +13,6 @@ class NetworkClient private constructor() {
     external fun setLogger(logger: AndroidLogger)
 
     external fun release()
-
-    @SwiftFunc
-    external fun testRequest()
 
     companion object {
 
