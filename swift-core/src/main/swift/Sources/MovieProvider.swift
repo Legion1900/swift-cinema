@@ -21,36 +21,61 @@ public enum MovieProviderError: Int, Error, Codable {
 public class MovieProvider {
 
     private let movieService: MovieServiceProtocol
+    private let logger: Logger
 
-    public init(forMovieService service: MovieServiceProtocol) {
+    public init(forMovieService service: MovieServiceProtocol, logger: Logger) {
         self.movieService = service
+        self.logger = logger
     }
 
     public func popularMovies(
         onPage page: Int,
         completion: @escaping (PopularMovies?, MovieProviderError?) -> Void
     ) {
-        movieService.getPopularMovies(page: page) { result in
-            switch result {
-            case .success(let response):
-                let popularMovies = PopularMovies(
-                    page: response.page,
-                    movies: response.results.map { movie in
-                        PopularMovie(
-                            id: movie.id,
-                            title: movie.title,
-                            overview: movie.overview,
-                            releaseDate: movie.releaseDate,
-                            posterPath: movie.posterPath,
-                            averageScore: movie.averageScore
-                        )
-                    },
-                    totalPages: response.totalPages,
-                    totalResults: response.totalResults
-                )
-                completion(popularMovies, nil)
-            case .failure(_):
-                completion(nil, .networkRequestFailed)
+        asyncToCallback(completion) {
+            try await self.getPopularMovies(page)
+        }
+    }
+
+    private func getPopularMovies(
+        _ page: Int
+    ) async throws -> PopularMovies {
+        do {
+            let response = try await movieService.getPopularMovies(page: page)
+            return PopularMovies(
+                page: response.page,
+                movies: response.results.map { movie in
+                    PopularMovie(
+                        id: movie.id,
+                        title: movie.title,
+                        overview: movie.overview,
+                        releaseDate: movie.releaseDate,
+                        posterPath: movie.posterPath,
+                        averageScore: movie.averageScore
+                    )
+                },
+                totalPages: response.totalPages,
+                totalResults: response.totalResults
+            )
+        } catch {
+            throw MovieProviderError.networkRequestFailed
+        }
+    }
+
+    private func asyncToCallback<R>(
+        _ completion: @escaping (R?, MovieProviderError?) -> Void,
+        _ asyncFunction: @escaping () async throws -> R
+    ) {
+        Task {
+            do {
+                logger.log("About to call async function in MovieProvider", withTag: "enigma")
+                let result = try await asyncFunction()
+                completion(result, nil)
+            } catch let error as MovieProviderError {
+                logger.log("Got known error \(error)", withTag: "enigma")
+                completion(nil, error)
+            } catch {
+                logger.log("Unknown error type \(error)", withTag: "enigma")
             }
         }
     }

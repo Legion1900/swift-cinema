@@ -21,5 +21,5 @@ val swiftCinemaModule = module {
     }
 
     factory { TMDBMovieService.init(get()) }
-    single { MovieProvider.init(get()) }
+    single { MovieProvider.init(get(), get()) }
 }

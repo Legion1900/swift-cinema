@@ -6,18 +6,12 @@ public class TMDBMovieService: MovieServiceProtocol {
     }
 
     public func getPopularMovies(
-        page: Int,
-        completion: @escaping (Result<DiscoverMoviesResponse, RequestError>) -> Void
-    ) {
-        networkClient.execute(endpoint: "/3/discover/movie", method: .GET) {
-            (response: DiscoverMoviesResponse?, error: RequestError?) in
-            if let error = error {
-                completion(.failure(error))
-            } else if let response = response {
-                completion(.success(response))
-            } else {
-                completion(.failure(RequestError.unknownError(reason: "Unknown error occurred")))
-            }
-        }
+        page: Int
+    ) async throws -> DiscoverMoviesResponse {
+        try await networkClient.execute(endpoint: "/3/discover/movie", method: .GET)
+    }
+
+    public func getConfigs() async throws -> ConfigurationResponse {
+        try await networkClient.execute(endpoint: "/3/configuration", method: .GET)
     }
 }
