@@ -64,16 +64,14 @@ public class NetworkClient {
     }
 
     public func execute<Response: Codable>(
-        endpoint: String, method: HttpMethod = .GET,
-        completion: ((Response?, RequestError?) -> Void)? = nil
-    ) {
-        execute(endpoint: endpoint, method: method, body: Empty.noType, completion: completion)
+        endpoint: String, method: HttpMethod = .GET
+    ) async throws -> Response {
+        try await execute(endpoint: endpoint, method: method, body: Empty.noType)
     }
 
     public func execute<Body: Codable, Response: Codable>(
-        endpoint: String, method: HttpMethod = .GET, body: Body? = nil,
-        completion: ((Response?, RequestError?) -> Void)? = nil
-    ) {
+        endpoint: String, method: HttpMethod = .GET, body: Body? = nil
+    ) async throws -> Response {
         let result = serializeBody(body)
             .flatMap { body in
                 getRequest(fromEndpoint: endpoint, method: .GET)
@@ -81,10 +79,10 @@ public class NetworkClient {
 
         switch result {
         case .success(let request):
-            execute(request, responseType: Response.self, completion: completion)
+            return try await execute(request: request, withResponse: Response.self)
         case .failure(let error):
             logError(error, extraMessage: "Failed to create request for endpoint \(endpoint)")
-            completion?(nil, error)
+            throw error
         }
     }
 
@@ -100,14 +98,6 @@ public class NetworkClient {
         } catch {
             return .failure(.serializationFailed(reason: String(describing: error)))
         }
-    }
-
-    // Helper method to make it easier to call execute with a specific response type
-    private func execute<Response: Codable>(
-        _ request: URLRequest, responseType: Response.Type,
-        completion: ((Response?, RequestError?) -> Void)? = nil
-    ) {
-        execute(request: request, completion)
     }
 
     private func getRequest(fromEndpoint endpoint: String, method: HttpMethod, body: Data? = nil)
@@ -135,39 +125,33 @@ public class NetworkClient {
     }
 
     private func execute<Response: Codable>(
-        request: URLRequest, _ completion: ((Response?, RequestError?) -> Void)? = nil
-    ) {
-        logMessage(
-            "About to send request: \(request.httpMethod ?? "unknown") to URL: \(request.url?.absoluteString ?? "nil URL") with headers \(request.allHTTPHeaderFields ?? [:])"
-        )
-
-        let task = urlSession.dataTask(with: request) { data, urlResponse, error in
-            // Check error
-            if let error = error {
-                let error = RequestError.unknownError(reason: String(describing: error))
-                self.logError(error)
-                completion?(nil, error)
-                return
-            }
-
-            if let error = self.checkResponse(urlResponse) {
-                self.logError(error)
-                completion?(nil, error)
-                return
-            }
-
-            let response = self.parseResponse(data, responseType: Response.self)
-            switch response {
-            case .success(let parsedResponse):
-                self.logMessage("Request succeeded with response: \(parsedResponse)")
-                completion?(parsedResponse, nil)
-            case .failure(let error):
-                self.logError(error)
-                completion?(nil, error)
-            }
+        request: URLRequest,
+        withResponse responseType: Response.Type
+    ) async throws -> Response {
+        let data = try await execute(request: request)
+        do {
+            return try parseResponse(data, asType: responseType)
+        } catch {
+            let error = RequestError.serializationFailed(
+                reason:
+                    "Failed to parse response for request \(request): \(error.localizedDescription)"
+            )
+            logError(error)
+            throw error
         }
+    }
 
-        task.resume()
+    private func execute(request: URLRequest) async throws -> Data {
+        do {
+            let (data, response) = try await urlSession.data(for: request)
+            if let error = checkResponse(response) {
+                logError(error)
+                throw error
+            }
+            return data
+        } catch {
+            throw RequestError.unknownError(reason: String(describing: error))
+        }
     }
 
     private func checkResponse(_ response: URLResponse?) -> RequestError? {
@@ -187,12 +171,12 @@ public class NetworkClient {
         return nil
     }
 
-    private func parseResponse<Response: Codable>(_ data: Data?, responseType: Response.Type)
-        -> Result<Response, RequestError>
+    private func parseResponse<Response: Codable>(_ data: Data?, asType responseType: Response.Type)
+        throws -> Response
     {
         do {
             let response = try decoder.decode(Response.self, from: data!)
-            return .success(response)
+            return response
         } catch {
             let plaintextDataContent =
                 if let data = data {
@@ -203,7 +187,7 @@ public class NetworkClient {
 
             let reason =
                 "Failed to parse response: \(error.localizedDescription). Data: \(String(describing: data)), \(plaintextDataContent)"
-            return .failure(.serializationFailed(reason: reason))
+            throw RequestError.serializationFailed(reason: reason)
         }
     }
 
