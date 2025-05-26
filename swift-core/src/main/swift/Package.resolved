@@ -1,5 +1,5 @@
 {
-  "originHash" : "a153835ed8e29393404d98c9aee6da20ac4b78b31f4e6228903446111b42b14d",
+  "originHash" : "6028afd44da9a020dd538ed47a7572470512c2081d8ffca762debc5067219b99",
   "pins" : [
     {
       "identity" : "java_swift",
@@ -44,6 +44,42 @@
       "state" : {
         "revision" : "d46cfd9f0efb61e45b08a01160a9e4aa35ae4817",
         "version" : "1.1.2"
+      }
+    },
+    {
+      "identity" : "swift-log",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-log.git",
+      "state" : {
+        "revision" : "3d8596ed08bd13520157f0355e35caed215ffbfa",
+        "version" : "1.6.3"
+      }
+    },
+    {
+      "identity" : "swift-sqlite-ee",
+      "kind" : "remoteSourceControl",
+      "location" : "git@github.com:readdle/swift-sqlite-ee.git",
+      "state" : {
+        "branch" : "3.39.4-readdle.3",
+        "revision" : "92ddfaa1394880c52e1ba0c6e9bd58f59d056da9"
+      }
+    },
+    {
+      "identity" : "swift-unicode",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/readdle/swift-unicode",
+      "state" : {
+        "revision" : "fb8aac372834ccb8fab0a5c1742df862d47c4156",
+        "version" : "68.2.0"
+      }
+    },
+    {
+      "identity" : "swiftfmdb",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/readdle/SwiftFMDB.git",
+      "state" : {
+        "branch" : "1.0.10-see.2",
+        "revision" : "3459a4e8cdf3759f3e92ca627136f0a2db178973"
       }
     }
   ],

@@ -15,7 +15,7 @@ func getAndroidLibTarget() -> Target {
             .product(name: "Java", package: "swift-java"),
             .product(name: "java_swift", package: "java_swift"),
             .product(name: "JavaCoder", package: "swift-java-coder"),
-            .product(name: "AndroidNDK", package: "swift-android-ndk")
+            .product(name: "AndroidNDK", package: "swift-android-ndk"),
         ],
         path: generatedPath,
         linkerSettings: [
@@ -36,6 +36,7 @@ let package = Package(
         .package(url: "https://github.com/readdle/swift-java.git", exact: "0.3.0"),
         .package(url: "https://github.com/readdle/swift-java-coder.git", exact: "1.1.2"),
         .package(url: "https://github.com/readdle/swift-android-ndk.git", exact: "1.1.4"),
+        .package(url: "https://github.com/readdle/SwiftFMDB.git", branch: "1.0.10-see.2"),
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -46,11 +47,12 @@ let package = Package(
                 .product(name: "Java", package: "swift-java"),
                 .product(name: "java_swift", package: "java_swift"),
                 .product(name: "JavaCoder", package: "swift-java-coder"),
-                .product(name: "AndroidNDK", package: "swift-android-ndk")
+                .product(name: "AndroidNDK", package: "swift-android-ndk"),
+                .product(name: "FMDB", package: "SwiftFMDB"),
             ],
             // Non-default path so we need to specify it. Otherwise, it will be `Sources/<target-name>`.
             path: "Sources"),
-        getAndroidLibTarget()
+        getAndroidLibTarget(),
     ],
     swiftLanguageVersions: [.v5]
 )
