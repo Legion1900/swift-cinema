@@ -1,6 +1,7 @@
 package com.legion1900.swiftcore
 
 import com.legion1900.swiftcore.network.TMDBMovieService
+import com.legion1900.swiftcore.utils.AndroidLogger
 import com.readdle.codegen.anotation.SwiftBlock
 import com.readdle.codegen.anotation.SwiftFunc
 import com.readdle.codegen.anotation.SwiftReference
@@ -8,7 +9,19 @@ import com.readdle.codegen.anotation.SwiftValue
 
 @SwiftValue
 enum class MovieProviderError(val rawValue: Int) {
-    NETWORK_ERROR(0),
+    NETWORK_ERROR(0);
+
+    companion object {
+
+        private val values = entries
+            .associateBy { it.rawValue }
+
+        @Suppress("unused")
+        @JvmStatic
+        fun valueOf(rawValue: Int): MovieProviderError {
+            return values[rawValue]!!
+        }
+    }
 }
 
 @SwiftValue
@@ -36,7 +49,7 @@ fun interface PopularMoviesCompletion {
 }
 
 @SwiftReference
-class MovieProvider private constructor(){
+class MovieProvider private constructor() {
 
     private var nativePointer: Long = 0
 
@@ -51,7 +64,7 @@ class MovieProvider private constructor(){
     companion object {
 
         @JvmStatic
-        @SwiftFunc("init(forMovieService:)")
-        external fun init(service: TMDBMovieService): MovieProvider
+        @SwiftFunc("init(forMovieService:logger:)")
+        external fun init(service: TMDBMovieService, logger: AndroidLogger): MovieProvider
     }
 }
