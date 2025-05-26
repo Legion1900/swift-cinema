@@ -48,7 +48,7 @@ let package = Package(
                 .product(name: "java_swift", package: "java_swift"),
                 .product(name: "JavaCoder", package: "swift-java-coder"),
                 .product(name: "AndroidNDK", package: "swift-android-ndk"),
-                .product(name: "FMDB", package: "SwiftFMDB"),
+                .product(name: "SwiftFMDB", package: "SwiftFMDB"),
             ],
             // Non-default path so we need to specify it. Otherwise, it will be `Sources/<target-name>`.
             path: "Sources"),

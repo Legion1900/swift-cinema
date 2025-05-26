@@ -5,6 +5,8 @@ import com.legion1900.swiftcore.MovieProvider
 import com.legion1900.swiftcore.network.AndroidApiKeyProvider
 import com.legion1900.swiftcore.network.TMDBMovieService
 import com.legion1900.swiftcore.network.NetworkClient
+import com.legion1900.swiftcore.storage.AndroidDbPathProvider
+import com.legion1900.swiftcore.storage.MoviesStorage
 import com.legion1900.swiftcore.utils.AndroidLogger
 import org.koin.dsl.module
 
@@ -24,4 +26,6 @@ val swiftCinemaModule = module {
     single { TMDBMovieService.init(get()) }
     single { MovieProvider.init(get(), get(), get()) }
     single { ConfigProvider.init(get(), get()) }
+    single { AndroidDbPathProvider.create(get()) }
+    single { MoviesStorage.init(get(), get()) }
 }
