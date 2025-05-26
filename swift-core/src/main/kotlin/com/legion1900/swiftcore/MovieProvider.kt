@@ -64,7 +64,7 @@ class MovieProvider private constructor() {
     companion object {
 
         @JvmStatic
-        @SwiftFunc("init(forMovieService:logger:)")
-        external fun init(service: TMDBMovieService, logger: AndroidLogger): MovieProvider
+        @SwiftFunc("init(forMovieService:andConfigProvider:withLogger:)")
+        external fun init(service: TMDBMovieService, configProvider: ConfigProvider, logger: AndroidLogger): MovieProvider
     }
 }

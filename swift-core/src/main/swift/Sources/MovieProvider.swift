@@ -16,16 +16,26 @@ public struct PopularMovie: Codable {
 
 public enum MovieProviderError: Int, Error, Codable {
     case networkRequestFailed
+    case cannotGetImageConfig
 }
 
-public class MovieProvider {
+public class MovieProvider: Loggable {
+
+    static var tag = "MovieProvider"
 
     private let movieService: MovieServiceProtocol
-    private let logger: Logger
+    private let configProvider: ConfigProvider
 
-    public init(forMovieService service: MovieServiceProtocol, logger: Logger) {
+    let logger: Logger
+
+    public init(
+        forMovieService service: MovieServiceProtocol,
+        andConfigProvider configProvider: ConfigProvider,
+        withLogger: Logger
+    ) {
         self.movieService = service
-        self.logger = logger
+        self.configProvider = configProvider
+        self.logger = withLogger
     }
 
     public func popularMovies(
@@ -40,26 +50,52 @@ public class MovieProvider {
     private func getPopularMovies(
         _ page: Int
     ) async throws -> PopularMovies {
+        let moviesResponse = try await discoverMovies(onPage: page)
+        let imgCinfigs = try await getImageConfig()
+
+        return mapToPopularMovies(
+            response: moviesResponse,
+            withImageConfig: imgCinfigs
+        )
+    }
+
+    private func discoverMovies(onPage page: Int) async throws -> DiscoverMoviesResponse {
         do {
-            let response = try await movieService.getPopularMovies(page: page)
-            return PopularMovies(
-                page: response.page,
-                movies: response.results.map { movie in
-                    PopularMovie(
-                        id: movie.id,
-                        title: movie.title,
-                        overview: movie.overview,
-                        releaseDate: movie.releaseDate,
-                        posterPath: movie.posterPath,
-                        averageScore: movie.averageScore
-                    )
-                },
-                totalPages: response.totalPages,
-                totalResults: response.totalResults
-            )
+            return try await movieService.getPopularMovies(page: page)
         } catch {
             throw MovieProviderError.networkRequestFailed
         }
+    }
+
+    private func getImageConfig() async throws -> ImageConfig {
+        do {
+            let response = try await configProvider.getConfigs()
+            return ImageConfig(baseUrl: response.baseUrl, maxPosterSize: response.maxPosterSize)
+        } catch {
+            log(String(describing: error))
+            throw MovieProviderError.cannotGetImageConfig
+        }
+    }
+
+    private func mapToPopularMovies(
+        response: DiscoverMoviesResponse,
+        withImageConfig imageConfig: ImageConfig
+    ) -> PopularMovies {
+        return PopularMovies(
+            page: response.page,
+            movies: response.results.map { movie in
+                PopularMovie(
+                    id: movie.id,
+                    title: movie.title,
+                    overview: movie.overview,
+                    releaseDate: movie.releaseDate,
+                    posterPath: imageConfig.fullPosterPath(for: movie.posterPath),
+                    averageScore: movie.averageScore
+                )
+            },
+            totalPages: response.totalPages,
+            totalResults: response.totalResults
+        )
     }
 
     private func asyncToCallback<R>(
@@ -68,14 +104,14 @@ public class MovieProvider {
     ) {
         Task {
             do {
-                logger.log("About to call async function in MovieProvider", withTag: "enigma")
+                log("About to call async function in MovieProvider")
                 let result = try await asyncFunction()
                 completion(result, nil)
             } catch let error as MovieProviderError {
-                logger.log("Got known error \(error)", withTag: "enigma")
+                log("Got known error \(error)")
                 completion(nil, error)
             } catch {
-                logger.log("Unknown error type \(error)", withTag: "enigma")
+                log("Unknown error type \(error)")
             }
         }
     }
