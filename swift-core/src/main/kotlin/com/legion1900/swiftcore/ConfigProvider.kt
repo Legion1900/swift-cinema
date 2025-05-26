@@ -1,6 +1,7 @@
 package com.legion1900.swiftcore
 
 import com.legion1900.swiftcore.network.TMDBMovieService
+import com.legion1900.swiftcore.storage.MoviesStorage
 import com.legion1900.swiftcore.utils.AndroidLogger
 import com.readdle.codegen.anotation.SwiftFunc
 import com.readdle.codegen.anotation.SwiftReference
@@ -14,7 +15,7 @@ class ConfigProvider private constructor() {
 
     companion object {
         @JvmStatic
-        @SwiftFunc("init(forMovieService:logger:)")
-        external fun init(service: TMDBMovieService, logger: AndroidLogger): ConfigProvider
+        @SwiftFunc("init(forMovieService:andStorage:withLogger:)")
+        external fun init(service: TMDBMovieService, moviesStorage: MoviesStorage, logger: AndroidLogger): ConfigProvider
     }
 }

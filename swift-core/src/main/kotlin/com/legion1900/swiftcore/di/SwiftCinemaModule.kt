@@ -25,7 +25,7 @@ val swiftCinemaModule = module {
 
     single { TMDBMovieService.init(get()) }
     single { MovieProvider.init(get(), get(), get()) }
-    single { ConfigProvider.init(get(), get()) }
+    single { ConfigProvider.init(get(), get(), get()) }
     single { AndroidDbPathProvider.create(get()) }
     single { MoviesStorage.init(get(), get()) }
 }

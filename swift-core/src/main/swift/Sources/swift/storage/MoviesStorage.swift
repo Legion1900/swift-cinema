@@ -6,24 +6,33 @@ public protocol DbPathProvider {
     func getPathForDb(withName: String) -> String
 }
 
-public class MoviesStorage {
+public class MoviesStorage: Loggable {
+
+    static var tag = "MoviesStorage"
 
     private static let DB_NAME = "movies.db"
     private static let tables = [
         ImageConfigRecord.self
     ]
 
-    private static func initTables() -> (FMDatabase) -> Void {
+    private static func initTables() -> (FMDatabase) -> Bool {
         { db in
-            Self.tables.map { $0.createTableQuery }
-                .forEach { sql in
-                    db.executeStatements(sql)
+            let sqlStatements = Self.tables.map { $0.createTableQuery }
+            var success = true
+            for sql in sqlStatements {
+                success = db.executeStatements(sql)
+
+                if !success {
+                    break
                 }
+            }
+
+            return success
         }
     }
 
     private let dbPathprovider: DbPathProvider
-    private let logger: Logger
+    let logger: Logger
 
     private let dbManager: DbManager
 
@@ -34,21 +43,21 @@ public class MoviesStorage {
         dbManager = DbManager(
             dbPathprovider: dbPathprovider,
             dbName: Self.DB_NAME,
+            withLogger: logger,
             dbInitBlock: Self.initTables())
     }
 
     func update(imgConfig: ImageConfigRecord) async throws {
-        try await dbManager.updateDb { db in
-            let sql = """
-                DELETE FROM \(ImageConfigRecord.tableName);
-                INSERT INTO \(ImageConfigRecord.tableName) (\(ImageConfigRecord.COLUMN_BASE_URL), \(ImageConfigRecord.COLUMN_MAX_POSTER_SIZE))VALUES (:\(ImageConfigRecord.COLUMN_BASE_URL), :\(ImageConfigRecord.COLUMN_MAX_POSTER_SIZE));
-                """
-            db.executeUpdate(
-                sql,
-                withParameterDictionary: [
-                    ImageConfigRecord.COLUMN_BASE_URL: imgConfig.baseUrl,
-                    ImageConfigRecord.COLUMN_MAX_POSTER_SIZE: imgConfig.maxPosterSize,
-                ])
+        try await dbManager.transaction { db in
+
+            db.executeUpdate(cached: true, "DELETE FROM \(ImageConfigRecord.tableName);")
+
+            let result = db.executeUpdate(
+                cached: true,
+                "INSERT INTO \(ImageConfigRecord.tableName) (\(ImageConfigRecord.COLUMN_BASE_URL), \(ImageConfigRecord.COLUMN_MAX_POSTER_SIZE)) VALUES (?, ?);",
+                withArgumentsInArray: [imgConfig.baseUrl, imgConfig.maxPosterSize])
+
+            return result
         }
     }
 }

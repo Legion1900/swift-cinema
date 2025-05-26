@@ -9,7 +9,8 @@ import com.readdle.codegen.anotation.SwiftValue
 
 @SwiftValue
 enum class MovieProviderError(val rawValue: Int) {
-    NETWORK_ERROR(0);
+    NETWORK_ERROR(0),
+    CANNOT_GET_IMAGE_CONFIG(1);
 
     companion object {
 

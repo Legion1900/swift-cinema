@@ -17,19 +17,30 @@ public class ConfigProvider: Loggable {
     private static let ORIGNAL_SIZE = "original"
 
     private let movieSercice: MovieServiceProtocol
+    private let moviesStorage: MoviesStorage
     let logger: Logger
 
-    public init(forMovieService service: MovieServiceProtocol, logger: Logger) {
+    public init(
+        forMovieService service: MovieServiceProtocol, andStorage moviesStorage: MoviesStorage,
+        withLogger logger: Logger
+    ) {
         self.movieSercice = service
         self.logger = logger
+        self.moviesStorage = moviesStorage
     }
 
     func getConfigs() async throws -> ImageConfig {
         let response = try await movieSercice.getConfigs().images
-        return getImamapTogeConfig(from: response)
+        let config = getImageConfig(from: response)
+
+        try await moviesStorage.update(
+            imgConfig: ImageConfigRecord(
+                baseUrl: config.baseUrl, maxPosterSize: config.maxPosterSize))
+
+        return config
     }
 
-    private func getImamapTogeConfig(from response: ConfigurationImagesResponse) -> ImageConfig {
+    private func getImageConfig(from response: ConfigurationImagesResponse) -> ImageConfig {
         let maxSize =
             response.posterSizes.contains(Self.ORIGNAL_SIZE)
             ? Self.ORIGNAL_SIZE : getMaxSize(from: response.posterSizes)
