@@ -5,33 +5,28 @@ enum DbError: Error {
     case databaseError(reason: String)
 }
 
+typealias TransactionBlock = (FMDatabase, inout Bool) throws -> Void
+
 actor DbManager {
 
     private let dbPathprovider: DbPathProvider
     private let dbName: String
 
-    private let logger: Logger
-
     private var queue: FMDatabaseQueue?
 
-    private let dbInitBlock: ((FMDatabase) -> Bool)?
+    private let dbInitBlock: TransactionBlock?
 
     init(
-        dbPathprovider: DbPathProvider, dbName: String, withLogger logger: Logger,
-        dbInitBlock: ((FMDatabase) -> Bool)? = nil
+        dbPathprovider: DbPathProvider,
+        dbName: String,
+        dbInitBlock: TransactionBlock? = nil
     ) {
         self.dbPathprovider = dbPathprovider
         self.dbName = dbName
         self.dbInitBlock = dbInitBlock
-        self.logger = logger
     }
 
-    public func transaction(transaction: @escaping (FMDatabase) throws -> Bool) async throws {
-        let queue = try await getDbQueue()
-        try await _transaction(queue: queue, transaction: transaction)
-    }
-
-    private func getDbQueue() async throws -> FMDatabaseQueue {
+    func getDbQueue() async throws -> FMDatabaseQueue {
         if let queue = queue {
             return queue
         }
@@ -41,32 +36,40 @@ actor DbManager {
         self.queue = dbQueue
 
         if let dbInitBlock = dbInitBlock {
-            try await _transaction(queue: dbQueue, transaction: dbInitBlock)
+            try await dbQueue.inTransaction(dbInitBlock)
         }
 
         return dbQueue
     }
+}
 
-    private func _transaction(
-        queue: FMDatabaseQueue,
-        transaction: @escaping (FMDatabase) throws -> Bool
+// This method is moved to extension to allow multiple DB queries at a time. Actual DB parallelization is up for a user to configure.
+extension DbManager {
+    func transaction(
+        _ transactionBlock: @escaping TransactionBlock
+    ) async throws {
+        let dbQueue = try await getDbQueue()
+        try await dbQueue.inTransaction(transactionBlock)
+    }
+}
+
+extension FMDatabaseQueue {
+    func inTransaction(
+        _ transactionBlock: @escaping TransactionBlock
     ) async throws {
         try await withCheckedThrowingContinuation { continuation in
-            // Offload sync operation to a background thread
+            // Offload potentially heavy sync operation to a background thread
             DispatchQueue.global().async {
-                queue.inTransaction { db, rollback in
+                self.inTransaction { db, rollback in
                     do {
-                        let success = try transaction(db)
+                        try transactionBlock(db, &rollback)
 
-                        self.logger.log("Transaction completed successfully: \(success)")
-
-                        if !success {
+                        if rollback {
                             throw DbError.databaseError(
                                 reason: "Transaction failed: \(String(describing: db.lastError()))")
                         }
                         continuation.resume()
                     } catch {
-                        rollback = true
                         continuation.resume(throwing: error)
                     }
                 }

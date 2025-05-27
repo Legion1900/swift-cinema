@@ -15,20 +15,18 @@ public class MoviesStorage: Loggable {
         ImageConfigRecord.self
     ]
 
-    private static func initTables() -> (FMDatabase) -> Bool {
-        { db in
-            let sqlStatements = Self.tables.map { $0.createTableQuery }
-            var success = true
-            for sql in sqlStatements {
-                success = db.executeStatements(sql)
+    private static func initTables(_ db: FMDatabase, _ rollback: inout Bool) {
+        let sqlStatements = Self.tables.map { $0.createTableQuery }
+        var success = true
+        for sql in sqlStatements {
+            success = db.executeStatements(sql)
 
-                if !success {
-                    break
-                }
+            if !success {
+                break
             }
-
-            return success
         }
+
+        rollback = !success
     }
 
     private let dbPathprovider: DbPathProvider
@@ -43,21 +41,21 @@ public class MoviesStorage: Loggable {
         dbManager = DbManager(
             dbPathprovider: dbPathprovider,
             dbName: Self.DB_NAME,
-            withLogger: logger,
-            dbInitBlock: Self.initTables())
+            dbInitBlock: Self.initTables
+        )
     }
 
     func update(imgConfig: ImageConfigRecord) async throws {
-        try await dbManager.transaction { db in
+        try await dbManager.transaction { db, rollback in
 
             db.executeUpdate(cached: true, "DELETE FROM \(ImageConfigRecord.tableName);")
 
-            let result = db.executeUpdate(
+            let success = db.executeUpdate(
                 cached: true,
                 "INSERT INTO \(ImageConfigRecord.tableName) (\(ImageConfigRecord.COLUMN_BASE_URL), \(ImageConfigRecord.COLUMN_MAX_POSTER_SIZE)) VALUES (?, ?);",
                 withArgumentsInArray: [imgConfig.baseUrl, imgConfig.maxPosterSize])
 
-            return result
+            rollback = !success
         }
     }
 }
