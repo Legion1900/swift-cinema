@@ -25,17 +25,20 @@ public class MovieProvider: Loggable {
 
     private let movieService: MovieServiceProtocol
     private let configProvider: ConfigProvider
+    private let storage: MoviesStorage
 
     let logger: Logger
 
     public init(
         forMovieService service: MovieServiceProtocol,
         andConfigProvider configProvider: ConfigProvider,
-        withLogger: Logger
+        withStorage storage: MoviesStorage,
+        andLogger: Logger
     ) {
         self.movieService = service
         self.configProvider = configProvider
-        self.logger = withLogger
+        self.logger = andLogger
+        self.storage = storage
     }
 
     public func popularMovies(
@@ -61,10 +64,33 @@ public class MovieProvider: Loggable {
 
     private func discoverMovies(onPage page: Int) async throws -> DiscoverMoviesResponse {
         do {
-            return try await movieService.getPopularMovies(page: page)
+            let response = try await movieService.getPopularMovies(page: page)
+            try await updateCache(with: response.results)
+            return response
         } catch {
             throw MovieProviderError.networkRequestFailed
         }
+    }
+
+    private func updateCache(with movies: [Movie]) async throws {
+        let records = movies.map(getMovieRecord(from:))
+        do {
+            try await storage.addOrUpdate(movies: records)
+        } catch {
+            log("Failed to update cache with movies: \(error)")
+            throw error
+        }
+    }
+
+    private func getMovieRecord(from movie: Movie) -> MovieRecord {
+        MovieRecord(
+            serviceId: movie.id,
+            title: movie.title,
+            overview: movie.overview,
+            releaseDate: movie.releaseDate,
+            posterPath: movie.posterPath,
+            averageScore: movie.averageScore
+        )
     }
 
     private func getImageConfig() async throws -> ImageConfig {

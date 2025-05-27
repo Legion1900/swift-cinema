@@ -10,17 +10,15 @@ struct MovieRecord: Table {
     static let COLUMN_RELEASE_DATE: String = "releaseDate"
     static let COLUMN_POSTER_PATH: String = "posterPath"
     static let COLUMN_AVERAGE_SCORE: String = "averageScore"
-    static let COLUMN_PK: String = "pk"
 
     static let createTableQuery: String = """
         CREATE TABLE IF NOT EXISTS \(TABLE_NAME) (
-            \(COLUMN_SERVICE_ID) INTEGER NOT NULL,
+            \(COLUMN_SERVICE_ID) INTEGER PRIMARY KEY,
             \(COLUMN_TITLE) TEXT NOT NULL,
             \(COLUMN_OVERVIEW) TEXT NOT NULL,
             \(COLUMN_RELEASE_DATE) TEXT NOT NULL,
             \(COLUMN_POSTER_PATH) TEXT,
-            \(COLUMN_AVERAGE_SCORE) REAL,
-            \(COLUMN_PK) INTEGER PRIMARY KEY AUTOINCREMENT
+            \(COLUMN_AVERAGE_SCORE) REAL
         );
         """
 
@@ -32,7 +30,6 @@ struct MovieRecord: Table {
             throw DbError.databaseError(reason: "Failed to read MovieRecord from row")
         }
 
-        let pk = row.int(forColumn: COLUMN_PK)
         let serviceId = row.int(forColumn: COLUMN_SERVICE_ID)
         let posterPath = row.string(forColumn: COLUMN_POSTER_PATH)
         let averageScore = row.double(forColumn: COLUMN_AVERAGE_SCORE)
@@ -43,8 +40,7 @@ struct MovieRecord: Table {
             overview: overview,
             releaseDate: releaseDate,
             posterPath: posterPath,
-            averageScore: averageScore,
-            pk: pk
+            averageScore: averageScore
         )
     }
 
@@ -54,18 +50,4 @@ struct MovieRecord: Table {
     let releaseDate: String
     let posterPath: String?
     let averageScore: Double?
-    let pk: Int
-
-    init(
-        serviceId: Int, title: String, overview: String, releaseDate: String, posterPath: String?,
-        averageScore: Double?, pk: Int = 0
-    ) {
-        self.serviceId = serviceId
-        self.title = title
-        self.overview = overview
-        self.releaseDate = releaseDate
-        self.posterPath = posterPath
-        self.averageScore = averageScore
-        self.pk = pk
-    }
 }

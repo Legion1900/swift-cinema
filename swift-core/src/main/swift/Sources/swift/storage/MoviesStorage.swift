@@ -71,4 +71,32 @@ public class MoviesStorage: Loggable {
             }
         }
     }
+
+    func addOrUpdate(movies: [MovieRecord]) async throws {
+        try await dbManager.transaction { db, rollback in
+            for movie in movies {
+                let success = db.executeUpdate(
+                    cached: true,
+                    """
+                    INSERT OR REPLACE INTO \(MovieRecord.TABLE_NAME)
+                    (\(MovieRecord.COLUMN_SERVICE_ID), \(MovieRecord.COLUMN_TITLE), \(MovieRecord.COLUMN_OVERVIEW), \(MovieRecord.COLUMN_RELEASE_DATE), \(MovieRecord.COLUMN_POSTER_PATH), \(MovieRecord.COLUMN_AVERAGE_SCORE))
+                    VALUES (:\(MovieRecord.COLUMN_SERVICE_ID), :\(MovieRecord.COLUMN_TITLE), :\(MovieRecord.COLUMN_OVERVIEW), :\(MovieRecord.COLUMN_RELEASE_DATE), :\(MovieRecord.COLUMN_POSTER_PATH), :\(MovieRecord.COLUMN_AVERAGE_SCORE));
+                    """,
+                    withParameterDictionary: [
+                        MovieRecord.COLUMN_SERVICE_ID: movie.serviceId,
+                        MovieRecord.COLUMN_TITLE: movie.title,
+                        MovieRecord.COLUMN_OVERVIEW: movie.overview,
+                        MovieRecord.COLUMN_RELEASE_DATE: movie.releaseDate,
+                        MovieRecord.COLUMN_POSTER_PATH: movie.posterPath,
+                        MovieRecord.COLUMN_AVERAGE_SCORE: movie.averageScore,
+                    ]
+                )
+
+                if !success {
+                    rollback = true
+                    break
+                }
+            }
+        }
+    }
 }
