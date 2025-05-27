@@ -7,27 +7,33 @@ import com.readdle.codegen.anotation.SwiftBlock
 import com.readdle.codegen.anotation.SwiftFunc
 import com.readdle.codegen.anotation.SwiftReference
 import com.readdle.codegen.anotation.SwiftValue
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.flow
 
 @SwiftValue
-enum class MovieProviderError(val rawValue: Int) {
-    NETWORK_ERROR(0),
-    CANNOT_GET_IMAGE_CONFIG(1);
+enum class MoviePageState(val rawValue: Int) {
+    LOADING(0),
+    LOADED(1),
+    CONNECTIVITY_ERROR(2),
+    FAILURE(3);
 
     companion object {
 
         private val values = entries
             .associateBy { it.rawValue }
 
-        @Suppress("unused")
         @JvmStatic
-        fun valueOf(rawValue: Int): MovieProviderError {
+        fun valueOf(rawValue: Int): MoviePageState {
             return values[rawValue]!!
         }
     }
 }
 
 @SwiftValue
-data class PopularMovies(
+data class MoviesPage(
+    var state: MoviePageState = MoviePageState.LOADING,
     var page: Int = 0,
     var movies: ArrayList<PopularMovie> = ArrayList(),
     var totalPages: Int = 0,
@@ -45,9 +51,9 @@ data class PopularMovie(
 )
 
 @FunctionalInterface
-@SwiftBlock("(PopularMovies?, MovieProviderError?) -> Void")
+@SwiftBlock("(MoviesPage) -> Void")
 fun interface PopularMoviesCompletion {
-    fun invoke(result: PopularMovies?, error: MovieProviderError?)
+    fun invoke(state: MoviesPage)
 }
 
 @SwiftReference
@@ -68,5 +74,15 @@ class MovieProvider private constructor() {
         @JvmStatic
         @SwiftFunc("init(forMovieService:andConfigProvider:withStorage:andLogger:)")
         external fun init(service: TMDBMovieService, configProvider: ConfigProvider, moviesStorage: MoviesStorage, logger: AndroidLogger): MovieProvider
+    }
+}
+
+fun MovieProvider.getPopularMovies(page: Int): Flow<MoviesPage> {
+    return callbackFlow {
+        popularMovies(page) { state ->
+            trySend(state)
+        }
+
+        awaitClose()
     }
 }

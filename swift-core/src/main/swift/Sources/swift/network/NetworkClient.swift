@@ -65,13 +65,13 @@ public class NetworkClient {
 
     public func execute<Response: Codable>(
         endpoint: String, method: HttpMethod = .GET
-    ) async throws -> Response {
+    ) async throws(RequestError) -> Response {
         try await execute(endpoint: endpoint, method: method, body: Empty.noType)
     }
 
     public func execute<Body: Codable, Response: Codable>(
         endpoint: String, method: HttpMethod = .GET, body: Body? = nil
-    ) async throws -> Response {
+    ) async throws(RequestError) -> Response {
         let result = serializeBody(body)
             .flatMap { body in
                 getRequest(fromEndpoint: endpoint, method: .GET)
@@ -127,7 +127,7 @@ public class NetworkClient {
     private func execute<Response: Codable>(
         request: URLRequest,
         withResponse responseType: Response.Type
-    ) async throws -> Response {
+    ) async throws(RequestError) -> Response {
         let data = try await execute(request: request)
         do {
             return try parseResponse(data, asType: responseType)
@@ -141,7 +141,7 @@ public class NetworkClient {
         }
     }
 
-    private func execute(request: URLRequest) async throws -> Data {
+    private func execute(request: URLRequest) async throws(RequestError) -> Data {
         do {
             let (data, response) = try await urlSession.data(for: request)
             if let error = checkResponse(response) {

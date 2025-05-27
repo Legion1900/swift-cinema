@@ -7,11 +7,11 @@ public class TMDBMovieService: MovieServiceProtocol {
 
     public func getPopularMovies(
         page: Int
-    ) async throws -> DiscoverMoviesResponse {
+    ) async throws(RequestError) -> DiscoverMoviesResponse {
         try await networkClient.execute(endpoint: "/3/discover/movie", method: .GET)
     }
 
-    public func getConfigs() async throws -> ConfigurationResponse {
+    public func getConfigs() async throws(RequestError) -> ConfigurationResponse {
         try await networkClient.execute(endpoint: "/3/configuration", method: .GET)
     }
 }

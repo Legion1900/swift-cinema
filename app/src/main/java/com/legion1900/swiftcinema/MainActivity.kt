@@ -12,26 +12,31 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.lifecycleScope
 import com.legion1900.swiftcinema.ui.theme.SwiftCinemaTheme
 import com.legion1900.swiftcore.MovieProvider
 import com.legion1900.swiftcore.PopularMoviesCompletion
+import com.legion1900.swiftcore.getPopularMovies
 import com.legion1900.swiftcore.network.NetworkClient
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import org.koin.android.ext.android.get
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class MainActivity : ComponentActivity() {
+
+    private val viewModel by viewModel<MoviesListViewModel>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val provider = get<MovieProvider>()
-
-        provider.popularMovies(0) { movies, error ->
-            if (error != null) {
-                Log.e("MainActivity", "Error fetching popular movies: $error")
-            } else {
-                Log.d("MainActivity", "Fetched popular movies: $movies")
+        viewModel.loadInitialState()
+        viewModel.state
+            .onEach { state ->
+                val movies = state.movies.values.map { it.title }
+                Log.d("enigma", "Loaded movies on page ${state.currentPage} of total ${state.totalResults}, current state: ${state.loadingState} movies: $movies")
             }
-        }
+            .launchIn(lifecycleScope)
 
         enableEdgeToEdge()
         setContent {

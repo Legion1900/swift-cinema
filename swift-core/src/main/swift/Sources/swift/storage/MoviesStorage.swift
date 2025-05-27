@@ -99,4 +99,34 @@ public class MoviesStorage: Loggable {
             }
         }
     }
+
+    func getMovies(offset: Int, limit: Int) async throws -> [MovieRecord] {
+        let sql = """
+            SELECT * FROM \(MovieRecord.TABLE_NAME)
+            ORDER BY \(MovieRecord.COLUMN_RELEASE_DATE) DESC
+            LIMIT ? OFFSET ?;
+            """
+        let args = [limit, offset]
+
+        return try await dbManager.query(sql, withArgumentArray: args) { set in
+            try MovieRecord.allFrom(resultSet: set)
+        } ?? []
+    }
+
+    func getMoviesCount() async -> Int {
+        let sql = "SELECT COUNT(\(MovieRecord.COLUMN_SERVICE_ID)) FROM \(MovieRecord.TABLE_NAME);"
+
+        do {
+            return try await dbManager.query(sql) { set in
+                if set.next() {
+                    return set.int(forColumnIndex: 0)
+                } else {
+                    return 0
+                }
+            } ?? 0
+        } catch {
+            log("Failed to get movies count: \(error)")
+            return 0
+        }
+    }
 }

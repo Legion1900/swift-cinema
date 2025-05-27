@@ -1,6 +1,7 @@
 package com.legion1900.swiftcinema
 
 import android.app.Application
+import com.legion1900.swiftcinema.di.appModule
 import com.legion1900.swiftcore.di.swiftCinemaModule
 import com.legion1900.swiftcore.network.NetworkClient
 import com.readdle.codegen.anotation.JavaSwift
@@ -26,7 +27,8 @@ class SwiftCinemaApp : Application() {
         startKoin {
             androidContext(this@SwiftCinemaApp)
             modules(
-                swiftCinemaModule
+                swiftCinemaModule,
+                appModule,
             )
         }
     }
