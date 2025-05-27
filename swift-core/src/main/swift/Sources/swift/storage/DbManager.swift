@@ -70,12 +70,7 @@ extension DbManager {
 
             defer { resultSet.close() }
 
-            do {
-                return try mapBlock(resultSet)
-            } catch {
-                throw DbError.queryMapingError(
-                    reason: "Mapping result set failed: \(error.localizedDescription)")
-            }
+            return try mapBlock(resultSet)
         }
     }
 }

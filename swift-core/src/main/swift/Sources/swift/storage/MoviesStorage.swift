@@ -48,11 +48,11 @@ public class MoviesStorage: Loggable {
     func update(imgConfig: ImageConfigRecord) async throws {
         try await dbManager.transaction { db, rollback in
 
-            db.executeUpdate(cached: true, "DELETE FROM \(ImageConfigRecord.tableName);")
+            db.executeUpdate(cached: true, "DELETE FROM \(ImageConfigRecord.TABLE_NAME);")
 
             let success = db.executeUpdate(
                 cached: true,
-                "INSERT INTO \(ImageConfigRecord.tableName) (\(ImageConfigRecord.COLUMN_BASE_URL), \(ImageConfigRecord.COLUMN_MAX_POSTER_SIZE)) VALUES (?, ?);",
+                "INSERT INTO \(ImageConfigRecord.TABLE_NAME) (\(ImageConfigRecord.COLUMN_BASE_URL), \(ImageConfigRecord.COLUMN_MAX_POSTER_SIZE)) VALUES (?, ?);",
                 withArgumentsInArray: [imgConfig.baseUrl, imgConfig.maxPosterSize])
 
             rollback = !success
@@ -60,20 +60,14 @@ public class MoviesStorage: Loggable {
     }
 
     func getImageConfig() async throws -> ImageConfigRecord? {
-        let sql = "SELECT * FROM \(ImageConfigRecord.tableName) LIMIT 1;"
+        let sql = "SELECT * FROM \(ImageConfigRecord.TABLE_NAME) LIMIT 1;"
 
         return try await dbManager.query(sql) { set in
-            var baseUrl: String?
-            var maxPosterSize: String?
-            while set.next() {
-                baseUrl = set.string(forColumn: ImageConfigRecord.COLUMN_BASE_URL)
-                maxPosterSize = set.string(forColumn: ImageConfigRecord.COLUMN_MAX_POSTER_SIZE)
+            return if set.next() {
+                try ImageConfigRecord.from(currentRow: set)
+            } else {
+                nil
             }
-
-            guard let baseUrl = baseUrl, let maxPosterSize = maxPosterSize else {
-                return nil
-            }
-            return ImageConfigRecord(baseUrl: baseUrl, maxPosterSize: maxPosterSize)
         }
     }
 }
