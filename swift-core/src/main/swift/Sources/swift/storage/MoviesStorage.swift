@@ -11,8 +11,9 @@ public class MoviesStorage: Loggable {
     static var tag = "MoviesStorage"
 
     private static let DB_NAME = "movies.db"
-    private static let tables = [
-        ImageConfigRecord.self
+    private static let tables: [Table.Type] = [
+        ImageConfigRecord.self,
+        MovieRecord.self,
     ]
 
     private static func initTables(_ db: FMDatabase, _ rollback: inout Bool) {
