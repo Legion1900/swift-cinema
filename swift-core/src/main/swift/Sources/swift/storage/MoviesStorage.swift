@@ -58,4 +58,22 @@ public class MoviesStorage: Loggable {
             rollback = !success
         }
     }
+
+    func getImageConfig() async throws -> ImageConfigRecord? {
+        let sql = "SELECT * FROM \(ImageConfigRecord.tableName) LIMIT 1;"
+
+        return try await dbManager.query(sql) { set in
+            var baseUrl: String?
+            var maxPosterSize: String?
+            while set.next() {
+                baseUrl = set.string(forColumn: ImageConfigRecord.COLUMN_BASE_URL)
+                maxPosterSize = set.string(forColumn: ImageConfigRecord.COLUMN_MAX_POSTER_SIZE)
+            }
+
+            guard let baseUrl = baseUrl, let maxPosterSize = maxPosterSize else {
+                return nil
+            }
+            return ImageConfigRecord(baseUrl: baseUrl, maxPosterSize: maxPosterSize)
+        }
+    }
 }

@@ -30,12 +30,31 @@ public class ConfigProvider: Loggable {
     }
 
     func getConfigs() async throws -> ImageConfig {
+        if let config = try await getFromStorage() {
+            log("Returning cached image config")
+            return config
+        } else {
+            log("Fetching image config from service")
+            return try await fetchFromServiceAndCache()
+        }
+    }
+
+    private func getFromStorage() async throws -> ImageConfig? {
+        guard let record = try await moviesStorage.getImageConfig() else {
+            return nil
+        }
+
+        return ImageConfig(baseUrl: record.baseUrl, maxPosterSize: record.maxPosterSize)
+    }
+
+    private func fetchFromServiceAndCache() async throws -> ImageConfig {
         let response = try await movieSercice.getConfigs().images
         let config = getImageConfig(from: response)
 
         try await moviesStorage.update(
             imgConfig: ImageConfigRecord(
-                baseUrl: config.baseUrl, maxPosterSize: config.maxPosterSize))
+                baseUrl: config.baseUrl, maxPosterSize: config.maxPosterSize)
+        )
 
         return config
     }
