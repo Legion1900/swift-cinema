@@ -63,7 +63,7 @@ public class ConfigProvider: Loggable {
         let maxSize =
             response.posterSizes.contains(Self.ORIGNAL_SIZE)
             ? Self.ORIGNAL_SIZE : getMaxSize(from: response.posterSizes)
-        return ImageConfig(baseUrl: response.baseUrl, maxPosterSize: maxSize)
+        return ImageConfig(baseUrl: response.secureBaseUrl, maxPosterSize: maxSize)
     }
 
     private func getMaxSize(from sizes: [String]) -> String {
